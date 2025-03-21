@@ -1,180 +1,117 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Secure Return Notes 🔐</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
-
-        body { 
-            font-family: 'Poppins', sans-serif; 
-            text-align: center; 
-            padding: 20px; 
+        body {
+            font-family: 'Poppins', sans-serif;
+            text-align: center;
             background: linear-gradient(120deg, #1e3c72, #2a5298);
             color: white;
+            padding: 20px;
         }
-
         .container {
-            background: rgba(255, 255, 255, 0.15); 
-            padding: 25px; 
-            border-radius: 15px; 
+            background: rgba(255, 255, 255, 0.15);
+            padding: 25px;
+            border-radius: 15px;
             box-shadow: 0px 4px 20px rgba(0,0,0,0.3);
-            display: inline-block;
-            width: 90%;
-            max-width: 450px;
             backdrop-filter: blur(15px);
-            animation: fadeIn 1s ease-in-out;
+            max-width: 450px;
+            margin: auto;
         }
-
-        h2 {
-            color: white;
-            font-size: 26px;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 5px rgba(0,0,0,0.3);
-        }
-
         textarea, input, button {
             width: 100%;
-            padding: 12px; 
+            padding: 12px;
             margin-top: 10px;
             border: none;
             border-radius: 8px;
             font-size: 16px;
             transition: all 0.3s ease;
         }
-
-        textarea {
-            height: 140px;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        textarea::placeholder, input::placeholder {
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        input {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
+        textarea { height: 120px; }
         button {
             background: #ff9800; 
-            color: white; 
+            color: white;
             cursor: pointer;
             font-weight: bold;
-            box-shadow: 0px 4px 10px rgba(255, 152, 0, 0.4);
-            position: relative;
-            overflow: hidden;
         }
-
-        button::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: rgba(255,255,255,0.3);
-            transition: left 0.5s ease-in-out;
-        }
-
-        button:hover::after {
-            left: 100%;
-        }
-
-        button:hover {
-            background: #e68900;
-            transform: scale(1.05);
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .icon {
-            font-size: 40px;
-            margin-bottom: 10px;
-            animation: popUp 1s ease-in-out infinite alternate;
-        }
-
-        @keyframes popUp {
-            from { transform: scale(1); }
-            to { transform: scale(1.1); }
-        }
-
+        button:hover { background: #e68900; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="icon">🔒</div>
-        <h2>Secure Return Notes</h2>
-
-        <!-- Start Button -->
-        <button id="startBtn" onclick="startNotes()">Use Secure Notes</button>
-
-        <!-- Notes Area -->
-        <textarea id="note" class="hidden" placeholder="Write your notes here..."></textarea>
-
-        <!-- Password Input -->
-        <input type="password" id="passwordInput" class="hidden" placeholder="Set Password for Notes">
+        <h2>Secure Return Notes 🔐 (Unique Password System)</h2>
+        <textarea id="note" placeholder="Write your notes here..."></textarea>
+        <input type="password" id="passwordInput" placeholder="Set Secure Password">
+        <button onclick="saveEncryptedNote()">Save Securely</button>
         
-        <!-- Save Button -->
-        <button id="saveBtn" class="hidden" onclick="saveNote()">Enter</button>
-
-        <!-- Unlock Notes -->
         <br><br>
         <input type="password" id="unlockPassword" placeholder="Enter Password to Unlock">
-        <button onclick="unlockNotes()">Unlock Notes</button>
+        <button onclick="decryptNote()">Unlock Notes</button>
+
+        <br><br>
+        <button onclick="resetPassword()">Reset Password</button>
     </div>
 
     <script>
-        function startNotes() {
-            document.getElementById("startBtn").classList.add("hidden");
-            document.getElementById("note").classList.remove("hidden");
-            document.getElementById("passwordInput").classList.remove("hidden");
-            document.getElementById("saveBtn").classList.remove("hidden");
-        }
-
-        function saveNote() {
+        function saveEncryptedNote() {
             let note = document.getElementById("note").value;
             let password = document.getElementById("passwordInput").value;
+            let usedPasswords = JSON.parse(localStorage.getItem("usedPasswords")) || [];
 
             if (note.trim() === "" || password.trim() === "") {
-                alert("Please enter notes and set a password!");
+                alert("Enter both note and password!");
                 return;
             }
 
-            localStorage.setItem("secureNote", note);
-            localStorage.setItem("notePassword", password);
+            if (usedPasswords.includes(password)) {
+                alert("❌ This password is already used by someone else! Use another password.");
+                return;
+            }
 
-            alert("Note saved successfully!");
-            document.getElementById("note").classList.add("hidden");
-            document.getElementById("passwordInput").classList.add("hidden");
-            document.getElementById("saveBtn").classList.add("hidden");
-            document.getElementById("startBtn").classList.remove("hidden");
+            let encryptedNote = CryptoJS.AES.encrypt(note, password).toString();
+            localStorage.setItem("secureNote", encryptedNote);
+            localStorage.setItem("securePassword", password);
+            usedPasswords.push(password);
+            localStorage.setItem("usedPasswords", JSON.stringify(usedPasswords));
+
+            alert("✅ Note saved securely!");
         }
 
-        function unlockNotes() {
-            let enteredPassword = document.getElementById("unlockPassword").value;
-            let savedPassword = localStorage.getItem("notePassword");
-            let savedNote = localStorage.getItem("secureNote");
+        function decryptNote() {
+            let password = document.getElementById("unlockPassword").value;
+            let encryptedNote = localStorage.getItem("secureNote");
+            let savedPassword = localStorage.getItem("securePassword");
 
-            if (enteredPassword === savedPassword) {
-                document.getElementById("note").classList.remove("hidden");
-                document.getElementById("note").value = savedNote;
+            if (!encryptedNote || !savedPassword) {
+                alert("❌ No saved notes found or password not set!");
+                return;
+            }
+
+            if (password !== savedPassword) {
+                alert("❌ Incorrect password!");
+                return;
+            }
+
+            let bytes = CryptoJS.AES.decrypt(encryptedNote, password);
+            let decryptedNote = bytes.toString(CryptoJS.enc.Utf8);
+
+            if (decryptedNote) {
+                document.getElementById("note").value = decryptedNote;
+                alert("✅ Note Unlocked!");
             } else {
-                alert("Incorrect password!");
+                alert("❌ Incorrect password!");
             }
         }
-    </script>
 
-</body></html>
+        function resetPassword() {
+            localStorage.removeItem("securePassword");
+            localStorage.removeItem("usedPasswords");
+            alert("✅ Password reset successfully! Now set a new password.");
+        }
+    </script>
+</body>
+</html>
